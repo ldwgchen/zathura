@@ -894,22 +894,6 @@ static void document_open_page_most_frequent_size(zathura_document_t* document, 
 }
 #endif
 
-static void document_open_page_max_size(zathura_document_t* document, unsigned int* width, unsigned int* height) {
-  const unsigned int number_of_pages = zathura_document_get_number_of_pages(document);
-
-  *width  = 0;
-  *height = 0;
-
-  for (unsigned int page_id = 0; page_id < number_of_pages; ++page_id) {
-    zathura_page_t* page = zathura_document_get_page(document, page_id);
-    const double w       = zathura_page_get_width(page);
-    const double h       = zathura_page_get_height(page);
-
-    *width  = MAX(*width, w);
-    *height = MAX(*height, h);
-  }
-}
-
 bool document_open(zathura_t* zathura, const char* path, const char* uri, const char* password, int page_number,
                    zathura_fileinfo_t* file_info_p) {
   if (zathura == NULL || zathura->plugins.manager == NULL || path == NULL) {
@@ -1102,10 +1086,6 @@ bool document_open(zathura_t* zathura, const char* path, const char* uri, const 
   if (zathura->pages == NULL) {
     goto error_free;
   }
-
-  unsigned int max_width, max_height;
-  document_open_page_max_size(document, &max_width, &max_height);
-  zathura_document_set_cell_size(document, max_height, max_width);
 
   for (unsigned int page_id = 0; page_id < number_of_pages; page_id++) {
     zathura_page_t* page = zathura_document_get_page(document, page_id);
