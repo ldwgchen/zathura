@@ -250,8 +250,6 @@ static bool init_ui(zathura_t* zathura) {
 
   /* page view */
   zathura->ui.page_widget = gtk_grid_new();
-  gtk_grid_set_row_homogeneous(GTK_GRID(zathura->ui.page_widget), TRUE);
-  gtk_grid_set_column_homogeneous(GTK_GRID(zathura->ui.page_widget), TRUE);
   if (zathura->ui.page_widget == NULL) {
     girara_error("Failed to create page widget.");
     return false;
