@@ -961,7 +961,8 @@ zathura_link_t* zathura_page_widget_link_get(ZathuraPage* widget, unsigned int i
   }
 }
 
-static void rotate_point(zathura_document_t* document, double orig_x, double orig_y, double* x, double* y) {
+static void rotate_point(zathura_document_t* document, zathura_page_t* page, double orig_x, double orig_y, double* x,
+                         double* y) {
   const unsigned int rotation = zathura_document_get_rotation(document);
   if (rotation == 0) {
     *x = orig_x;
@@ -969,8 +970,9 @@ static void rotate_point(zathura_document_t* document, double orig_x, double ori
     return;
   }
 
-  unsigned int height, width;
-  zathura_document_get_cell_size(document, &height, &width);
+  const double height = zathura_page_get_height(page);
+  const double width  = zathura_page_get_width(page);
+
   switch (rotation) {
   case 90:
     *x = orig_y;
@@ -1019,7 +1021,7 @@ static gboolean cb_zathura_page_widget_button_press_event(GtkWidget* widget, Gdk
     if (button->type == GDK_BUTTON_PRESS) {
       /* start the selection */
       double x, y;
-      rotate_point(document, button->x, button->y, &x, &y);
+      rotate_point(document, zathura_page_widget_get_page(page), button->x, button->y, &x, &y);
 
       priv->mouse.selection.x1 = x;
       priv->mouse.selection.y1 = y;
@@ -1142,7 +1144,7 @@ static gboolean cb_zathura_page_widget_motion_notify(GtkWidget* widget, GdkEvent
     zathura_page_widget_clear_selection(page);
     if (event->state & priv->zathura->global.highlighter_modmask) {
       double x, y;
-      rotate_point(document, event->x, event->y, &x, &y);
+      rotate_point(document, zathura_page_widget_get_page(page), event->x, event->y, &x, &y);
       priv->highlighter.bounds = next_selection_rectangle(priv->mouse.selection.x1, priv->mouse.selection.y1, x, y);
       priv->highlighter.bounds.x1 /= scale;
       priv->highlighter.bounds.y1 /= scale;
@@ -1153,7 +1155,8 @@ static gboolean cb_zathura_page_widget_motion_notify(GtkWidget* widget, GdkEvent
       zathura_page_widget_redraw_canvas(page);
     } else {
       /* calculate next selection */
-      rotate_point(document, event->x, event->y, &priv->mouse.selection.x2, &priv->mouse.selection.y2);
+      rotate_point(document, zathura_page_widget_get_page(page), event->x, event->y, &priv->mouse.selection.x2,
+                   &priv->mouse.selection.y2);
 
       zathura_rectangle_t selection = priv->mouse.selection;
       selection.x1 /= scale;

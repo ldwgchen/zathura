@@ -538,26 +538,57 @@ void zathura_document_get_cell_size(zathura_document_t* document, unsigned int* 
   page_calc_height_width(document, document->cell_height, document->cell_width, height, width, true);
 }
 
-void zathura_document_get_document_size(zathura_document_t* document, unsigned int* height, unsigned int* width) {
+void zathura_document_get_document_size(zathura_document_t* document, bool scale, unsigned int* height,
+                                        unsigned int* width) {
   g_return_if_fail(document != NULL && height != NULL && width != NULL);
 
   const unsigned int npag = zathura_document_get_number_of_pages(document);
   const unsigned int ncol = zathura_document_get_pages_per_row(document);
+  g_return_if_fail(npag != 0 && ncol != 0);
+  const unsigned int c0  = zathura_document_get_first_page_column(document);
+  const unsigned int pad = zathura_document_get_page_padding(document);
 
-  if (npag == 0 || ncol == 0) {
-    return;
+  unsigned int document_width = 0, document_height = 0;
+
+  /* calc document height */
+  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
+  for (unsigned int row = 1; row <= nrow; row++) {
+    unsigned int first_page_id, last_page_id;
+    get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
+    unsigned int row_height = 0;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_t* page = zathura_document_get_page(document, page_id);
+      const double height  = zathura_page_get_height(page);
+      if (row_height < height) {
+        row_height = height;
+      }
+    }
+    document_height += row_height;
   }
 
-  const unsigned int c0   = zathura_document_get_first_page_column(document);
-  const unsigned int nrow = (npag + c0 - 1 + ncol - 1) / ncol; /* number of rows */
-  const unsigned int pad  = zathura_document_get_page_padding(document);
+  /* calc document width */
+  for (unsigned int col = 1; col <= ncol; col++) {
+    unsigned int first_page_id, last_page_id;
+    get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
+    unsigned int col_width = 0;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_t* page = zathura_document_get_page(document, page_id);
+      const double width   = zathura_page_get_width(page);
+      if (col_width < width) {
+        col_width = width;
+      }
+    }
+    document_width += col_width;
+  }
 
-  unsigned int cell_height = 0;
-  unsigned int cell_width  = 0;
-  zathura_document_get_cell_size(document, &cell_height, &cell_width);
-
-  *width  = ncol * cell_width + (ncol - 1) * pad;
-  *height = nrow * cell_height + (nrow - 1) * pad;
+  if (scale) {
+    page_calc_height_width(document, document_height, document_width, height, width, true);
+  } else {
+    document_height += (nrow - 1) * pad;
+    document_width += (ncol - 1) * pad;
+    *height = document_height;
+    *width  = document_width;
+  }
 }
 
 void zathura_document_set_cell_size(zathura_document_t* document, unsigned int cell_height, unsigned int cell_width) {

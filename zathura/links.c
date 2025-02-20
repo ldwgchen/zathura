@@ -144,7 +144,7 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
 
   unsigned int doc_height = 0;
   unsigned int doc_width  = 0;
-  zathura_document_get_document_size(document, &doc_height, &doc_width);
+  zathura_document_get_document_size(document, TRUE, &doc_height, &doc_width);
 
   bool link_hadjust = true;
   girara_setting_get(zathura->ui.session, "link-hadjust", &link_hadjust);

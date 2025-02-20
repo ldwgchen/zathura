@@ -620,3 +620,32 @@ girara_list_t* flatten_rectangles(girara_list_t* rectangles) {
   girara_list_free(points);
   return new_rectangles;
 }
+
+void get_row_range(unsigned int row, unsigned int c0, unsigned int ncol, unsigned int npag, unsigned int* first_page_id,
+                   unsigned int* last_page_id) {
+  int first = (row - 1) * ncol - (c0 - 1);
+  int last  = first + ncol - 1;
+  if (first < 0) {
+    first = 0;
+  }
+  if (last > (int)npag - 1) {
+    last = npag - 1;
+  }
+  *first_page_id = (unsigned int)first;
+  *last_page_id  = (unsigned int)last;
+}
+
+void get_column_range(unsigned int col, unsigned int c0, unsigned int ncol, unsigned int npag,
+                      unsigned int* first_page_id, unsigned int* last_page_id) {
+  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
+  int first               = col - c0;
+  int last                = first + (nrow - 1) * ncol;
+  if (first < 0) {
+    first += ncol;
+  }
+  if (last > (int)npag - 1) {
+    last -= ncol;
+  }
+  *first_page_id = (unsigned int)first;
+  *last_page_id  = (unsigned int)last;
+}

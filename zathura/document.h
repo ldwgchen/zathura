@@ -315,10 +315,11 @@ ZATHURA_PLUGIN_API void zathura_document_get_cell_size(zathura_document_t* docum
  * should be equal to the allocation of zathura->ui.page_widget once it's shown.
  *
  * @param[in]  document               The document
+ * @param[in]  scale                 Scale height and width
  * @param[out] height,width           The height and width of the document
  */
-ZATHURA_PLUGIN_API void zathura_document_get_document_size(zathura_document_t* document, unsigned int* height,
-                                                           unsigned int* width);
+ZATHURA_PLUGIN_API void zathura_document_get_document_size(zathura_document_t* document, bool scale,
+                                                           unsigned int* height, unsigned int* width);
 
 /**
  * Sets the cell height and width of the document

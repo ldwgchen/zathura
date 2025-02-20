@@ -181,4 +181,31 @@ bool parse_color(GdkRGBA* color, const char* str);
  */
 girara_list_t* flatten_rectangles(girara_list_t* rectangles);
 
+/**
+ * Get the page numbers of the first page and the last page of a row
+ *
+ * @param[in] row Row number
+ * @param[in] c0  First page column
+ * @param[in] ncol Pages per row
+ * @param[in] npag Number of pages
+ * @param[out] first_page_id Pointer to store the first page id
+ * @param[out] last_page_id Pointer to store the last page id
+ *
+ */
+void get_row_range(unsigned int row, unsigned int c0, unsigned int ncol, unsigned int npag, unsigned int* first_page_id,
+                   unsigned int* last_page_id);
+
+/**
+ * Get the page numbers of the first page and the last page of a column
+ *
+ * @param[in] col Column number
+ * @param[in] c0  First page column
+ * @param[in] ncol Pages per row
+ * @param[in] npag Number of pages
+ * @param[out] first_page_id Pointer to store the first page id
+ * @param[out] last_page_id Pointer to store the last page id
+ *
+ */
+void get_column_range(unsigned int col, unsigned int c0, unsigned int ncol, unsigned int npag,
+                      unsigned int* first_page_id, unsigned int* last_page_id);
 #endif // UTILS_H

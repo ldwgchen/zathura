@@ -1701,7 +1701,7 @@ bool adjust_view(zathura_t* zathura) {
   unsigned int view_height = 0, view_width = 0;
 
   zathura_document_get_cell_size(document, &cell_height, &cell_width);
-  zathura_document_get_document_size(document, &document_height, &document_width);
+  zathura_document_get_document_size(document, TRUE, &document_height, &document_width);
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
   if (view_height == 0 || view_width == 0 || cell_height == 0 || cell_width == 0 || document_width == 0) {
