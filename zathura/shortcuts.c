@@ -955,9 +955,11 @@ bool sc_search(girara_session_t* session, girara_argument_t* argument, girara_ev
 
     /* correction to center the current result                          */
     /* NOTE: rectangle is in viewport units, already scaled and rotated */
-    unsigned int cell_height = 0;
-    unsigned int cell_width  = 0;
-    zathura_document_get_cell_size(zathura->document, &cell_height, &cell_width);
+    unsigned int page_height = 0;
+    unsigned int page_width  = 0;
+    const double height      = zathura_page_get_height(target_page);
+    const double width       = zathura_page_get_width(target_page);
+    page_calc_height_width(zathura->document, height, width, &page_height, &page_width, true);
 
     unsigned int doc_height = 0;
     unsigned int doc_width  = 0;
@@ -966,11 +968,11 @@ bool sc_search(girara_session_t* session, girara_argument_t* argument, girara_ev
     /* compute the center of the rectangle, which will be aligned to the center
        of the viewport */
     const double center_y = (rectangle.y1 + rectangle.y2) / 2;
-    pos_y += (center_y - (double)cell_height / 2) / (double)doc_height;
+    pos_y += (center_y - (double)page_height / 2) / (double)doc_height;
 
     if (search_hadjust == true) {
       const double center_x = (rectangle.x1 + rectangle.x2) / 2;
-      pos_x += (center_x - (double)cell_width / 2) / (double)doc_width;
+      pos_x += (center_x - (double)page_width / 2) / (double)doc_width;
     }
 
     /* move to position */

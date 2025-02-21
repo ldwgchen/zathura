@@ -583,6 +583,8 @@ void zathura_document_get_document_size(zathura_document_t* document, bool scale
 
   if (scale) {
     page_calc_height_width(document, document_height, document_width, height, width, true);
+    *height += (nrow - 1) * pad;
+    *width += (ncol - 1) * pad;
   } else {
     document_height += (nrow - 1) * pad;
     document_width += (ncol - 1) * pad;

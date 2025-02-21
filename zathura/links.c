@@ -138,33 +138,35 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
 
   /* correct to place the target position at the top of the viewport     */
   /* NOTE: link->target is in page units, needs to be scaled and rotated */
-  unsigned int cell_height = 0;
-  unsigned int cell_width  = 0;
-  zathura_document_get_cell_size(document, &cell_height, &cell_width);
-
   unsigned int doc_height = 0;
   unsigned int doc_width  = 0;
   zathura_document_get_document_size(document, TRUE, &doc_height, &doc_width);
+
+  unsigned int page_height = 0;
+  unsigned int page_width  = 0;
+  const double height      = zathura_page_get_height(page);
+  const double width       = zathura_page_get_width(page);
+  page_calc_height_width(document, height, width, &page_height, &page_width, true);
 
   bool link_hadjust = true;
   girara_setting_get(zathura->ui.session, "link-hadjust", &link_hadjust);
 
   /* scale and rotate */
   const double scale = zathura_document_get_scale(document);
-  double shiftx      = link->target.left * scale / cell_width;
-  double shifty      = link->target.top * scale / cell_height;
+  double shiftx      = link->target.left * scale / page_width;
+  double shifty      = link->target.top * scale / page_height;
   page_calc_position(document, shiftx, shifty, &shiftx, &shifty);
 
   /* shift the position or set to auto */
   if (link->target.destination_type == ZATHURA_LINK_DESTINATION_XYZ && link->target.left != -1 &&
       link_hadjust == true) {
-    pos_x += shiftx * cell_width / doc_width;
+    pos_x += shiftx * page_width / doc_width;
   } else {
     pos_x = -1; /* -1 means automatic */
   }
 
   if (link->target.destination_type == ZATHURA_LINK_DESTINATION_XYZ && link->target.top != -1) {
-    pos_y += shifty * cell_height / doc_height;
+    pos_y += shifty * page_height / doc_height;
   } else {
     pos_y = -1; /* -1 means automatic */
   }

@@ -284,10 +284,6 @@ void synctex_highlight_rects(zathura_t* zathura, unsigned int page, girara_list_
 
   /* correction to center the current result                          */
   /* NOTE: rectangle is in viewport units, already scaled and rotated */
-  unsigned int cell_height = 0;
-  unsigned int cell_width  = 0;
-  zathura_document_get_cell_size(document, &cell_height, &cell_width);
-
   unsigned int doc_height = 0;
   unsigned int doc_width  = 0;
   zathura_document_get_document_size(document, TRUE, &doc_height, &doc_width);
@@ -308,9 +304,15 @@ void synctex_highlight_rects(zathura_t* zathura, unsigned int page, girara_list_
   double center_x = (rectangle.x1 + rectangle.x2) / 2;
   double center_y = (rectangle.y1 + rectangle.y2) / 2;
 
-  pos_y += (center_y - (double)cell_height / 2) / (double)doc_height;
+  unsigned int page_height = 0;
+  unsigned int page_width  = 0;
+  const double height      = zathura_page_get_height(doc_page);
+  const double width       = zathura_page_get_width(doc_page);
+  page_calc_height_width(document, height, width, &page_height, &page_width, true);
+
+  pos_y += (center_y - (double)page_height / 2) / (double)doc_height;
   if (search_hadjust == true) {
-    pos_x += (center_x - (double)cell_width / 2) / (double)doc_width;
+    pos_x += (center_x - (double)page_width / 2) / (double)doc_width;
   }
 
   /* move to position */
