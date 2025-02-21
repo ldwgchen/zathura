@@ -47,8 +47,13 @@ void page_calc_position(zathura_document_t* document, double x, double y, double
 unsigned int position_to_page_number(zathura_document_t* document, double pos_x, double pos_y) {
   g_return_val_if_fail(document != NULL, 0);
 
-  unsigned int document_width, document_height;
-  zathura_document_get_document_size(document, FALSE, &document_height, &document_width);
+  unsigned int document_height = 0, document_width = 0;
+  zathura_document_get_document_size(document, &document_height, &document_width);
+  g_return_val_if_fail(document_height != 0 && document_width != 0, 0);
+  unsigned int pad_y = 0, pad_x = 0;
+  zathura_document_compute_padding(document, &pad_y, &pad_x);
+  document_height += pad_y;
+  document_width += pad_x;
 
   const unsigned int npag = zathura_document_get_number_of_pages(document);
   const unsigned int ncol = zathura_document_get_pages_per_row(document);
@@ -125,8 +130,13 @@ void page_number_to_position(zathura_document_t* document, unsigned int page_num
   const double width       = zathura_page_get_width(page);
   page_calc_height_width(document, height, width, &page_height, &page_width, true);
 
-  unsigned int document_width, document_height;
-  zathura_document_get_document_size(document, FALSE, &document_height, &document_width);
+  unsigned int document_height = 0, document_width = 0;
+  zathura_document_get_document_size(document, &document_height, &document_width);
+  g_return_if_fail(document_height != 0 && document_width != 0);
+  unsigned int pad_y = 0, pad_x = 0;
+  zathura_document_compute_padding(document, &pad_y, &pad_x);
+  document_height += pad_y;
+  document_width += pad_x;
 
   unsigned int view_height = 0, view_width = 0;
   zathura_document_get_viewport_size(document, &view_height, &view_width);
@@ -198,14 +208,14 @@ bool page_is_visible(zathura_document_t* document, unsigned int page_number) {
   double page_x, page_y;
   page_number_to_position(document, page_number, 0.5, 0.5, &page_x, &page_y);
 
-  unsigned int doc_width, doc_height;
-  zathura_document_get_document_size(document, TRUE, &doc_height, &doc_width);
+  unsigned int document_height, document_width;
+  zathura_document_get_transformed_document_size(document, &document_height, &document_width);
 
   unsigned int view_width, view_height;
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
-  return (fabs(pos_x - page_x) < 0.5 * (double)(view_width + page_width) / (double)doc_width &&
-          fabs(pos_y - page_y) < 0.5 * (double)(view_height + page_height) / (double)doc_height);
+  return (fabs(pos_x - page_x) < 0.5 * (double)(view_width + page_width) / (double)document_width &&
+          fabs(pos_y - page_y) < 0.5 * (double)(view_height + page_height) / (double)document_height);
 }
 
 void zathura_adjustment_set_value(GtkAdjustment* adjustment, gdouble value) {

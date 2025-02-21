@@ -138,9 +138,9 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
 
   /* correct to place the target position at the top of the viewport     */
   /* NOTE: link->target is in page units, needs to be scaled and rotated */
-  unsigned int doc_height = 0;
-  unsigned int doc_width  = 0;
-  zathura_document_get_document_size(document, TRUE, &doc_height, &doc_width);
+  unsigned int document_height = 0;
+  unsigned int document_width  = 0;
+  zathura_document_get_transformed_document_size(document, &document_height, &document_width);
 
   unsigned int page_height = 0;
   unsigned int page_width  = 0;
@@ -160,13 +160,13 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
   /* shift the position or set to auto */
   if (link->target.destination_type == ZATHURA_LINK_DESTINATION_XYZ && link->target.left != -1 &&
       link_hadjust == true) {
-    pos_x += shiftx * page_width / doc_width;
+    pos_x += shiftx * page_width / document_width;
   } else {
     pos_x = -1; /* -1 means automatic */
   }
 
   if (link->target.destination_type == ZATHURA_LINK_DESTINATION_XYZ && link->target.top != -1) {
-    pos_y += shifty * page_height / doc_height;
+    pos_y += shifty * page_height / document_height;
   } else {
     pos_y = -1; /* -1 means automatic */
   }

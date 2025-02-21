@@ -576,9 +576,9 @@ bool sc_scroll(girara_session_t* session, girara_argument_t* argument, girara_ev
   unsigned int view_height = 0;
   zathura_document_get_viewport_size(zathura->document, &view_height, &view_width);
 
-  unsigned int doc_width  = 0;
-  unsigned int doc_height = 0;
-  zathura_document_get_document_size(zathura->document, TRUE, &doc_height, &doc_width);
+  unsigned int document_height = 0;
+  unsigned int document_width  = 0;
+  zathura_document_get_transformed_document_size(zathura->document, &document_height, &document_width);
 
   float scroll_step = 40;
   girara_setting_get(session, "scroll-step", &scroll_step);
@@ -603,8 +603,8 @@ bool sc_scroll(girara_session_t* session, girara_argument_t* argument, girara_ev
   }
 
   unsigned int pad   = zathura_document_get_page_padding(zathura->document);
-  const double vstep = (double)(view_height + pad) / (double)doc_height;
-  const double hstep = (double)(view_width + pad) / (double)doc_width;
+  const double vstep = (double)(view_height + pad) / (double)document_height;
+  const double hstep = (double)(view_width + pad) / (double)document_width;
 
   /* compute new position */
   switch (argument->n) {
@@ -630,24 +630,24 @@ bool sc_scroll(girara_session_t* session, girara_argument_t* argument, girara_ev
 
   case UP:
   case DOWN:
-    pos_y += direction * t * scroll_step / (double)doc_height;
+    pos_y += direction * t * scroll_step / (double)document_height;
     break;
 
   case LEFT:
   case RIGHT:
-    pos_x += direction * t * scroll_hstep / (double)doc_width;
+    pos_x += direction * t * scroll_hstep / (double)document_width;
     break;
 
   case BIDIRECTIONAL: {
-    pos_x += event->x * t * scroll_hstep / (double)doc_width;
-    pos_y += event->y * t * scroll_step / (double)doc_height;
+    pos_x += event->x * t * scroll_hstep / (double)document_width;
+    pos_y += event->y * t * scroll_step / (double)document_height;
     break;
   }
   }
 
   /* handle boundaries */
-  const double end_x = 0.5 * (double)view_width / (double)doc_width;
-  const double end_y = 0.5 * (double)view_height / (double)doc_height;
+  const double end_x = 0.5 * (double)view_width / (double)document_width;
+  const double end_y = 0.5 * (double)view_height / (double)document_height;
 
   const double new_x = scroll_wrap ? 1.0 - end_x : end_x;
   const double new_y = scroll_wrap ? 1.0 - end_y : end_y;
@@ -961,18 +961,18 @@ bool sc_search(girara_session_t* session, girara_argument_t* argument, girara_ev
     const double width       = zathura_page_get_width(target_page);
     page_calc_height_width(zathura->document, height, width, &page_height, &page_width, true);
 
-    unsigned int doc_height = 0;
-    unsigned int doc_width  = 0;
-    zathura_document_get_document_size(zathura->document, TRUE, &doc_height, &doc_width);
+    unsigned int document_height = 0;
+    unsigned int document_width  = 0;
+    zathura_document_get_transformed_document_size(zathura->document, &document_height, &document_width);
 
     /* compute the center of the rectangle, which will be aligned to the center
        of the viewport */
     const double center_y = (rectangle.y1 + rectangle.y2) / 2;
-    pos_y += (center_y - (double)page_height / 2) / (double)doc_height;
+    pos_y += (center_y - (double)page_height / 2) / (double)document_height;
 
     if (search_hadjust == true) {
       const double center_x = (rectangle.x1 + rectangle.x2) / 2;
-      pos_x += (center_x - (double)page_width / 2) / (double)doc_width;
+      pos_x += (center_x - (double)page_width / 2) / (double)document_width;
     }
 
     /* move to position */

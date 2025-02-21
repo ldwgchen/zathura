@@ -34,11 +34,13 @@ struct zathura_document_s {
   unsigned int rotate;               /**< Rotation */
   zathura_adjust_mode_t adjust_mode; /**< Adjust mode (best-fit, width) */
   int page_offset;                   /**< Page offset */
-  double cell_width;        /**< width of a page cell in the document (not transformed by scale and rotation) */
-  double cell_height;       /**< height of a page cell in the document (not transformed by scale and rotation) */
-  unsigned int view_width;  /**< width of current viewport */
-  unsigned int view_height; /**< height of current viewport */
-  double view_ppi;          /**< PPI of the current viewport */
+  double cell_width;            /**< width of a page cell in the document (not transformed by scale and rotation) */
+  double cell_height;           /**< height of a page cell in the document (not transformed by scale and rotation) */
+  unsigned int document_width;  /**< width of the entire document (not transformed by scale and rotation) */
+  unsigned int document_height; /**< height of the entire document (not transformed by scale and rotation) */
+  unsigned int view_width;      /**< width of current viewport */
+  unsigned int view_height;     /**< height of current viewport */
+  double view_ppi;              /**< PPI of the current viewport */
   zathura_device_factors_t device_factors; /**< x and y device scale factors (for e.g. HiDPI) */
   unsigned int pages_per_row;              /**< number of pages in a row */
   unsigned int first_page_column;          /**< column of the first page */
@@ -163,6 +165,8 @@ zathura_document_t* zathura_document_open(zathura_t* zathura, const char* path, 
   document->adjust_mode      = ZATHURA_ADJUST_NONE;
   document->cell_width       = 0.0;
   document->cell_height      = 0.0;
+  document->document_height  = 0;
+  document->document_width   = 0;
   document->view_height      = 0;
   document->view_width       = 0;
   document->view_ppi         = 0.0;
@@ -258,6 +262,74 @@ zathura_error_t zathura_document_free(zathura_document_t* document) {
   g_free(document);
 
   return error;
+}
+
+void zathura_document_compute_size(zathura_document_t* document, unsigned int* height, unsigned int* width) {
+  g_return_if_fail(document != NULL && height != NULL && width != NULL);
+  const unsigned int npag = zathura_document_get_number_of_pages(document);
+  const unsigned int ncol = zathura_document_get_pages_per_row(document);
+  g_return_if_fail(npag != 0 && ncol != 0);
+  const unsigned int c0 = zathura_document_get_first_page_column(document);
+
+  unsigned int document_width = 0, document_height = 0;
+
+  /* calc document height */
+  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
+  for (unsigned int row = 1; row <= nrow; row++) {
+    unsigned int first_page_id, last_page_id;
+    get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
+    unsigned int row_height = 0;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_t* page = zathura_document_get_page(document, page_id);
+      const double height  = zathura_page_get_height(page);
+      if (row_height < height) {
+        row_height = height;
+      }
+    }
+    document_height += row_height;
+  }
+
+  /* calc document width */
+  for (unsigned int col = 1; col <= ncol; col++) {
+    unsigned int first_page_id, last_page_id;
+    get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
+    unsigned int col_width = 0;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_t* page = zathura_document_get_page(document, page_id);
+      const double width   = zathura_page_get_width(page);
+      if (col_width < width) {
+        col_width = width;
+      }
+    }
+    document_width += col_width;
+  }
+
+  *height = document_height;
+  *width  = document_width;
+}
+
+void zathura_document_compute_padding(zathura_document_t* document, unsigned int* pad_y, unsigned int* pad_x) {
+  g_return_if_fail(document != NULL && pad_y != NULL && pad_x != NULL);
+  const unsigned int npag = zathura_document_get_number_of_pages(document);
+  const unsigned int ncol = zathura_document_get_pages_per_row(document);
+  g_return_if_fail(npag != 0 && ncol != 0);
+  const unsigned int c0   = zathura_document_get_first_page_column(document);
+  const unsigned int pad  = zathura_document_get_page_padding(document);
+  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
+  *pad_y                  = (nrow - 1) * pad;
+  *pad_x                  = (ncol - 1) * pad;
+}
+
+void zathura_document_get_transformed_document_size(zathura_document_t* document, unsigned int* height,
+                                                    unsigned int* width) {
+  unsigned int document_height = 0, document_width = 0;
+  zathura_document_get_document_size(document, &document_height, &document_width);
+  g_return_if_fail(document_height != 0 && document_width != 0);
+  page_calc_height_width(document, document_height, document_width, height, width, true);
+  unsigned int pad_y = 0, pad_x = 0;
+  zathura_document_compute_padding(document, &pad_y, &pad_x);
+  *height += pad_y;
+  *width += pad_x;
 }
 
 const char* zathura_document_get_path(zathura_document_t* document) {
@@ -538,59 +610,16 @@ void zathura_document_get_cell_size(zathura_document_t* document, unsigned int* 
   page_calc_height_width(document, document->cell_height, document->cell_width, height, width, true);
 }
 
-void zathura_document_get_document_size(zathura_document_t* document, bool scale, unsigned int* height,
-                                        unsigned int* width) {
+void zathura_document_get_document_size(zathura_document_t* document, unsigned int* height, unsigned int* width) {
   g_return_if_fail(document != NULL && height != NULL && width != NULL);
+  *height = document->document_height;
+  *width  = document->document_width;
+}
 
-  const unsigned int npag = zathura_document_get_number_of_pages(document);
-  const unsigned int ncol = zathura_document_get_pages_per_row(document);
-  g_return_if_fail(npag != 0 && ncol != 0);
-  const unsigned int c0  = zathura_document_get_first_page_column(document);
-  const unsigned int pad = zathura_document_get_page_padding(document);
-
-  unsigned int document_width = 0, document_height = 0;
-
-  /* calc document height */
-  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
-  for (unsigned int row = 1; row <= nrow; row++) {
-    unsigned int first_page_id, last_page_id;
-    get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
-    unsigned int row_height = 0;
-    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page = zathura_document_get_page(document, page_id);
-      const double height  = zathura_page_get_height(page);
-      if (row_height < height) {
-        row_height = height;
-      }
-    }
-    document_height += row_height;
-  }
-
-  /* calc document width */
-  for (unsigned int col = 1; col <= ncol; col++) {
-    unsigned int first_page_id, last_page_id;
-    get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
-    unsigned int col_width = 0;
-    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page = zathura_document_get_page(document, page_id);
-      const double width   = zathura_page_get_width(page);
-      if (col_width < width) {
-        col_width = width;
-      }
-    }
-    document_width += col_width;
-  }
-
-  if (scale) {
-    page_calc_height_width(document, document_height, document_width, height, width, true);
-    *height += (nrow - 1) * pad;
-    *width += (ncol - 1) * pad;
-  } else {
-    document_height += (nrow - 1) * pad;
-    document_width += (ncol - 1) * pad;
-    *height = document_height;
-    *width  = document_width;
-  }
+void zathura_document_set_document_size(zathura_document_t* document, unsigned int document_height,
+                                        unsigned int document_width) {
+  document->document_height = document_height;
+  document->document_width  = document_width;
 }
 
 void zathura_document_set_cell_size(zathura_document_t* document, unsigned int cell_height, unsigned int cell_width) {

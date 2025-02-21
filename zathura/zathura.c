@@ -1145,6 +1145,10 @@ bool document_open(zathura_t* zathura, const char* path, const char* uri, const 
   page_widget_set_mode(zathura, page_padding, pages_per_row, first_page_column, page_right_to_left);
   zathura_document_set_page_layout(document, page_padding, pages_per_row, first_page_column);
 
+  unsigned int document_height = 0, document_width = 0;
+  zathura_document_compute_size(document, &document_height, &document_width);
+  zathura_document_set_document_size(document, document_height, document_width);
+
   girara_set_view(zathura->ui.session, zathura->ui.page_widget);
 
   /* bookmarks */
@@ -1701,7 +1705,7 @@ bool adjust_view(zathura_t* zathura) {
   unsigned int view_height = 0, view_width = 0;
 
   zathura_document_get_cell_size(document, &cell_height, &cell_width);
-  zathura_document_get_document_size(document, TRUE, &document_height, &document_width);
+  zathura_document_get_transformed_document_size(document, &document_height, &document_width);
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
   if (view_height == 0 || view_width == 0 || cell_height == 0 || cell_width == 0 || document_width == 0) {
