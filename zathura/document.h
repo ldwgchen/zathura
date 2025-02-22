@@ -322,33 +322,11 @@ void ZATHURA_PLUGIN_API zathura_document_set_device_factors(zathura_document_t* 
  */
 ZATHURA_PLUGIN_API zathura_device_factors_t zathura_document_get_device_factors(zathura_document_t* document);
 
-/**
- * Return the size of a cell from the document's layout table in pixels. Assumes
- * that the table is homogeneous (i.e. every cell has the same dimensions). It
- * takes the current scale into account.
- *
- * @param[in]  document     The document instance
- * @param[out] height,width The computed height and width of the cell
- */
-ZATHURA_PLUGIN_API void zathura_document_get_cell_size(zathura_document_t* document, unsigned int* height,
-                                                       unsigned int* width);
-
 ZATHURA_PLUGIN_API void zathura_document_get_document_size(zathura_document_t* document, unsigned int* height,
                                                            unsigned int* width);
 
 ZATHURA_PLUGIN_API void zathura_document_set_document_size(zathura_document_t* document, unsigned int document_height,
                                                            unsigned int document_width);
-
-/**
- * Sets the cell height and width of the document
- *
- * @param[in]  document          The document instance
- * @param[in]  cell_height       The desired cell height
- * @param[in]  cell_width        The desired cell width
- */
-ZATHURA_PLUGIN_API void zathura_document_set_cell_size(zathura_document_t* document, unsigned int cell_height,
-                                                       unsigned int cell_width);
-
 /**
  * Sets the layout of the pages in the document
  *

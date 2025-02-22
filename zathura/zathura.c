@@ -255,7 +255,7 @@ static bool init_ui(zathura_t* zathura) {
     return false;
   }
 
-  g_signal_connect(G_OBJECT(zathura->ui.session->gtk.window), "size-allocate", G_CALLBACK(cb_view_resized), zathura);
+  g_signal_connect(G_OBJECT(zathura->ui.session->gtk.window), "configure-event", G_CALLBACK(cb_view_resized), zathura);
 
   GtkAdjustment* hadjustment = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(zathura->ui.session->gtk.view));
 
@@ -1700,50 +1700,42 @@ bool adjust_view(zathura_t* zathura) {
     goto error_ret;
   }
 
-  unsigned int cell_height = 0, cell_width = 0;
+  const unsigned int current_page = zathura_document_get_current_page_number(document);
+  zathura_page_t* page            = zathura_document_get_page(document, current_page);
+  if (page == NULL) {
+    goto error_ret;
+  }
+  unsigned int page_height = 0, page_width = 0;
+  const double height = zathura_page_get_height(page);
+  const double width  = zathura_page_get_width(page);
+  page_calc_height_width(document, height, width, &page_height, &page_width, true);
+
   unsigned int document_height = 0, document_width = 0;
   unsigned int view_height = 0, view_width = 0;
 
-  zathura_document_get_cell_size(document, &cell_height, &cell_width);
   zathura_document_get_transformed_document_size(document, &document_height, &document_width);
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
-  if (view_height == 0 || view_width == 0 || cell_height == 0 || cell_width == 0 || document_width == 0) {
+  if (view_height == 0 || view_width == 0 || page_height == 0 || page_width == 0 || document_width == 0) {
     goto error_ret;
   }
 
-  double page_ratio = (double)cell_height / (double)document_width;
+  double page_ratio = (double)page_height / (double)document_width;
   double view_ratio = (double)view_height / (double)view_width;
   double zoom       = zathura_document_get_zoom(document);
   double newzoom    = zoom;
 
   if (adjust_mode == ZATHURA_ADJUST_WIDTH || (adjust_mode == ZATHURA_ADJUST_BESTFIT && page_ratio < view_ratio)) {
-    newzoom *= (double)view_width / (double)document_width;
+    newzoom *= (double)view_width / (double)page_width;
   } else if (adjust_mode == ZATHURA_ADJUST_BESTFIT) {
-    newzoom *= (double)view_height / (double)cell_height;
+    newzoom *= (double)view_height / (double)page_height;
   } else {
     goto error_ret;
   }
 
-  /* save new zoom and recompute cell size */
   zathura_document_set_zoom(document, newzoom);
-  unsigned int new_cell_height = 0, new_cell_width = 0;
-  zathura_document_get_cell_size(document, &new_cell_height, &new_cell_width);
-
-  /*
-   * XXX requiring a larger difference apparently circumvents #94 for some users; this is not a
-   * proper fix
-   */
-  static const int min_change = 2;
-  /* if the change in zoom changes page cell dimensions, render */
-  if (abs((int)new_cell_width - (int)cell_width) > min_change ||
-      abs((int)new_cell_height - (int)cell_height) > min_change) {
-    render_all(zathura);
-    refresh_view(zathura);
-  } else {
-    /* otherwise set the old zoom and leave */
-    zathura_document_set_zoom(document, zoom);
-  }
+  render_all(zathura);
+  refresh_view(zathura);
 
 error_ret:
   return false;
