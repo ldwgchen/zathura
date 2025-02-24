@@ -1754,14 +1754,14 @@ void update_size(zathura_t* zathura) {
   if (npag == 0 || ncol == 0) {
     return;
   }
-  const unsigned int c0              = zathura_document_get_first_page_column(document);
-  const unsigned int pad             = zathura_document_get_page_padding(document);
-  girara_list_t* page_tail_positions = zathura_document_get_page_tail_positions(document);
-  if (page_tail_positions == NULL) {
+  const unsigned int c0          = zathura_document_get_first_page_column(document);
+  const unsigned int pad         = zathura_document_get_page_padding(document);
+  girara_list_t* page_edges_list = zathura_document_get_page_edges_list(document);
+  if (page_edges_list == NULL) {
     return;
   }
 
-  unsigned int accumulated_height = 0, accumulated_width = 0;
+  unsigned int prev = 0, accumulated_height = 0, accumulated_width = 0;
 
   /* calc document height */
   const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
@@ -1780,10 +1780,12 @@ void update_size(zathura_t* zathura) {
         row_height = page_height;
       }
     }
-    accumulated_height += row_height + pad;
+    prev = accumulated_height;
+    accumulated_height += row_height + (row == nrow ? 0 : pad);
     for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_tail_position_t* page_tail_position = girara_list_nth(page_tail_positions, page_id);
-      page_tail_position->position_y                   = accumulated_height;
+      zathura_page_edges_t* page_edges = girara_list_nth(page_edges_list, page_id);
+      page_edges->top                  = prev;
+      page_edges->bottom               = accumulated_height;
     }
   }
 
@@ -1803,15 +1805,15 @@ void update_size(zathura_t* zathura) {
         col_width = page_width;
       }
     }
-    accumulated_width += col_width + pad;
+    prev = accumulated_width;
+    accumulated_width += col_width + (col == ncol ? 0 : pad);
     for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_tail_position_t* page_tail_position = girara_list_nth(page_tail_positions, page_id);
-      page_tail_position->position_x                   = accumulated_width;
+      zathura_page_edges_t* page_edges = girara_list_nth(page_edges_list, page_id);
+      page_edges->left                 = prev;
+      page_edges->right                = accumulated_width;
     }
   }
 
-  accumulated_height -= pad;
-  accumulated_width -= pad;
   zathura_document_set_document_size(document, accumulated_height, accumulated_width);
 }
 

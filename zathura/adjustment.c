@@ -64,9 +64,9 @@ unsigned int position_to_page_number(zathura_document_t* document, double pos_x,
   for (unsigned int row = 1; row <= nrow; row++) {
     unsigned int first_page_id, last_page_id;
     get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
-    unsigned int y = 0, dontcare = 0;
-    zathura_document_get_page_tail_position(document, first_page_id, &dontcare, &y);
-    if ((double)y / document_height >= pos_y) {
+    unsigned int top = 0, bottom = 0, left = 0, right = 0;
+    zathura_document_get_page_edges(document, first_page_id, &top, &bottom, &left, &right);
+    if ((double)bottom / document_height >= pos_y) {
       page_row = row;
       break;
     }
@@ -79,9 +79,9 @@ unsigned int position_to_page_number(zathura_document_t* document, double pos_x,
   for (unsigned int col = 1; col <= ncol; col++) {
     unsigned int first_page_id, last_page_id;
     get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
-    unsigned int x = 0, dontcare = 0;
-    zathura_document_get_page_tail_position(document, first_page_id, &x, &dontcare);
-    if ((double)x / document_width >= pos_x) {
+    unsigned int top = 0, bottom = 0, left = 0, right = 0;
+    zathura_document_get_page_edges(document, first_page_id, &top, &bottom, &left, &right);
+    if ((double)right / document_width >= pos_x) {
       page_col = col;
       break;
     }
@@ -102,8 +102,10 @@ unsigned int position_to_page_number(zathura_document_t* document, double pos_x,
 
 void page_number_to_position(zathura_document_t* document, unsigned int page_number, double xalign, double yalign,
                              double* pos_x, double* pos_y) {
+  g_return_if_fail(document != NULL);
+
   zathura_page_t* page = zathura_document_get_page(document, page_number);
-  g_return_if_fail(document != NULL && page != NULL);
+  g_return_if_fail(page != NULL);
   unsigned int page_height = 0;
   unsigned int page_width  = 0;
   const double height      = zathura_page_get_height(page);
@@ -117,11 +119,10 @@ void page_number_to_position(zathura_document_t* document, unsigned int page_num
   unsigned int view_height = 0, view_width = 0;
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
-  unsigned int x = 0, y = 0;
+  unsigned int top = 0, bottom = 0, left = 0, right = 0;
+  zathura_document_get_page_edges(document, page_number, &top, &bottom, &left, &right);
 
-  if (page_number > 0) {
-    zathura_document_get_page_tail_position(document, page_number - 1, &x, &y);
-  }
+  unsigned int x = left, y = top;
 
   /* compute the shift to align to the viewport. If the page fits to viewport, just center it. */
 
@@ -136,19 +137,10 @@ void page_number_to_position(zathura_document_t* document, unsigned int page_num
 bool page_is_visible(zathura_document_t* document, unsigned int page_number) {
   zathura_page_t* page = zathura_document_get_page(document, page_number);
   g_return_val_if_fail(document != NULL && page != NULL, false);
-  unsigned int page_height = 0;
-  unsigned int page_width  = 0;
-  const double height      = zathura_page_get_height(page);
-  const double width       = zathura_page_get_width(page);
-  page_calc_height_width(document, height, width, &page_height, &page_width, true);
 
   /* position at the center of the viewport */
   double pos_x = zathura_document_get_position_x(document);
   double pos_y = zathura_document_get_position_y(document);
-
-  /* get the center of page page_number */
-  double page_x, page_y;
-  page_number_to_position(document, page_number, 0.5, 0.5, &page_x, &page_y);
 
   unsigned int document_height, document_width;
   zathura_document_get_document_size(document, &document_height, &document_width);
@@ -156,8 +148,20 @@ bool page_is_visible(zathura_document_t* document, unsigned int page_number) {
   unsigned int view_width, view_height;
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
-  return (fabs(pos_x - page_x) < 0.5 * (double)(view_width + page_width) / (double)document_width &&
-          fabs(pos_y - page_y) < 0.5 * (double)(view_height + page_height) / (double)document_height);
+  unsigned int top = 0, bottom = 0, left = 0, right = 0;
+  zathura_document_get_page_edges(document, page_number, &top, &bottom, &left, &right);
+
+  const double top_y    = (double)top / document_height;
+  const double bottom_y = (double)bottom / document_height;
+  const double left_x   = (double)left / document_width;
+  const double right_x  = (double)right / document_width;
+
+  const double viewport_left   = pos_x - 0.5 * (double)view_width / document_width;
+  const double viewport_right  = pos_x + 0.5 * (double)view_width / document_width;
+  const double viewport_top    = pos_y - 0.5 * (double)view_height / document_height;
+  const double viewport_bottom = pos_y + 0.5 * (double)view_height / document_height;
+
+  return right_x >= viewport_left && left_x <= viewport_right && bottom_y >= viewport_top && top_y <= viewport_bottom;
 }
 
 void zathura_adjustment_set_value(GtkAdjustment* adjustment, gdouble value) {

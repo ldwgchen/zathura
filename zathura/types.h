@@ -322,9 +322,11 @@ struct zathura_mark_s {
 
 typedef struct zathura_mark_s zathura_mark_t;
 
-/* Position of a page at its bottom and right in pixels (scaled and rotated) */
-typedef struct zathura_tail_position_s {
-  unsigned int position_x; /**> document width right after the page + pad */
-  unsigned int position_y; /**> document height right after the page + pad */
-} zathura_page_tail_position_t;
+/* Edges of a page, scaled and rotated, in pixels */
+typedef struct zathura_page_edges_s {
+  unsigned int top;
+  unsigned int bottom;
+  unsigned int left;
+  unsigned int right;
+} zathura_page_edges_t;
 #endif // TYPES_H

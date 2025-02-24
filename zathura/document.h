@@ -23,14 +23,14 @@ zathura_document_t* zathura_document_open(zathura_t* zathura, const char* path, 
                                           zathura_error_t* error);
 
 /**
- * Get the tail position of a page
+ * Get the edges of a page
  *
  * @param[in]  document                The document
  * @param[in]  page_number
- * @param[out] position_x,position_y   Tail positions
+ * @param[out] top,bottom,left,right   Page edges
  */
-void zathura_document_get_page_tail_position(zathura_document_t* document, unsigned int page_number,
-                                             unsigned int* position_x, unsigned int* position_y);
+void zathura_document_get_page_edges(zathura_document_t* document, unsigned int page_number, unsigned int* top,
+                                     unsigned int* bottom, unsigned int* left, unsigned int* right);
 
 /** Get the list of page tail positions
  *
@@ -38,7 +38,7 @@ void zathura_document_get_page_tail_position(zathura_document_t* document, unsig
  * @return    page_positions           List of page tail positions
  *
  */
-girara_list_t* zathura_document_get_page_tail_positions(zathura_document_t* document);
+girara_list_t* zathura_document_get_page_edges_list(zathura_document_t* document);
 
 /**
  * Free the document

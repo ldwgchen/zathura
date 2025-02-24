@@ -43,7 +43,7 @@ struct zathura_document_s {
   unsigned int page_padding;               /**< padding between pages */
   double position_x;                       /**< X adjustment */
   double position_y;                       /**< Y adjustment */
-  girara_list_t* page_tail_positions;      /**< List of page tail positions */
+  girara_list_t* page_edges_list;          /**< List of page positions */
 
   /**
    * Document pages
@@ -201,14 +201,14 @@ zathura_document_t* zathura_document_open(zathura_t* zathura, const char* path, 
     document->pages[page_id] = page;
   }
 
-  document->page_tail_positions = girara_list_new();
+  document->page_edges_list = girara_list_new();
   for (unsigned int page_id = 0; page_id < document->number_of_pages; page_id++) {
-    zathura_page_tail_position_t* page_tail_position = g_try_malloc0(sizeof(zathura_page_tail_position_t));
-    if (page_tail_position == NULL) {
+    zathura_page_edges_t* page_edges = g_try_malloc0(sizeof(zathura_page_edges_t));
+    if (page_edges == NULL) {
       check_set_error(error, ZATHURA_ERROR_OUT_OF_MEMORY);
       goto error_free;
     }
-    girara_list_append(document->page_tail_positions, page_tail_position);
+    girara_list_append(document->page_edges_list, page_edges);
   }
 
   return document;
@@ -231,23 +231,25 @@ error_free:
   return NULL;
 }
 
-void zathura_document_get_page_tail_position(zathura_document_t* document, unsigned int page_number,
-                                             unsigned int* position_x, unsigned int* position_y) {
-  g_return_if_fail(document != NULL && position_x != NULL && position_y != NULL &&
-                   document->page_tail_positions != NULL);
-  girara_list_t* list                              = document->page_tail_positions;
-  zathura_page_tail_position_t* page_tail_position = girara_list_nth(list, page_number);
-  g_return_if_fail(page_tail_position != NULL);
-  *position_x = page_tail_position->position_x;
-  *position_y = page_tail_position->position_y;
+void zathura_document_get_page_edges(zathura_document_t* document, unsigned int page_number, unsigned int* top,
+                                     unsigned int* bottom, unsigned int* left, unsigned int* right) {
+  g_return_if_fail(document != NULL && left != NULL && right != NULL && top != NULL && bottom != NULL &&
+                   document->page_edges_list != NULL);
+  girara_list_t* list              = document->page_edges_list;
+  zathura_page_edges_t* page_edges = girara_list_nth(list, page_number);
+  g_return_if_fail(page_edges != NULL);
+  *top    = page_edges->top;
+  *bottom = page_edges->bottom;
+  *left   = page_edges->left;
+  *right  = page_edges->right;
 }
 
-girara_list_t* zathura_document_get_page_tail_positions(zathura_document_t* document) {
+girara_list_t* zathura_document_get_page_edges_list(zathura_document_t* document) {
   if (document == NULL) {
     return NULL;
   }
 
-  return document->page_tail_positions;
+  return document->page_edges_list;
 }
 
 zathura_error_t zathura_document_free(zathura_document_t* document) {
@@ -269,7 +271,7 @@ zathura_error_t zathura_document_free(zathura_document_t* document) {
 
   zathura_error_t error = functions->document_free(document, document->data);
 
-  girara_list_free(document->page_tail_positions);
+  girara_list_free(document->page_edges_list);
   g_free(document->file_path);
   g_free(document->uri);
   g_free(document->basename);
