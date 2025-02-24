@@ -48,15 +48,17 @@ void cb_buffer_changed(girara_session_t* session) {
 }
 
 void update_visible_pages(zathura_t* zathura) {
-  zathura_document_t* document       = zathura_get_document(zathura);
-  const unsigned int number_of_pages = zathura_document_get_number_of_pages(document);
+  zathura_document_t* document           = zathura_get_document(zathura);
+  const unsigned int number_of_pages     = zathura_document_get_number_of_pages(document);
+  const unsigned int current_page_number = zathura_document_get_current_page_number(document);
 
+  bool flag = true;
   for (unsigned int page_id = 0; page_id < number_of_pages; page_id++) {
     zathura_page_t* page             = zathura_document_get_page(document, page_id);
     GtkWidget* page_widget           = zathura_page_get_widget(zathura, page);
     ZathuraPage* zathura_page_widget = ZATHURA_PAGE(page_widget);
 
-    if (page_is_visible(document, page_id) == true) {
+    if (flag && page_is_visible(document, page_id) == true) {
       /* make page visible */
       if (zathura_page_get_visibility(page) == false) {
         zathura_page_set_visibility(page, true);
@@ -78,6 +80,11 @@ void update_visible_pages(zathura_t* zathura) {
       g_object_get(obj_page_widget, "search-results", &results, NULL);
       if (results != NULL) {
         g_object_set(obj_page_widget, "search-current", 0, NULL);
+      }
+
+      /* If after current page, subsequent pages will be invisible */
+      if (page_id > current_page_number) {
+        flag = false;
       }
     }
   }
