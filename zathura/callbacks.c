@@ -252,6 +252,7 @@ gboolean cb_widget_configured(GtkWidget* UNUSED(widget), GdkEvent* UNUSED(event)
   }
 
   zathura_update_view_ppi(zathura);
+  adjust_view(zathura);
 
   return false;
 }
@@ -321,9 +322,7 @@ void cb_page_layout_value_changed(girara_session_t* session, const char* name, g
   page_widget_set_mode(zathura, page_padding, pages_per_row, first_page_column, page_right_to_left);
   zathura_document_set_page_layout(zathura_get_document(zathura), page_padding, pages_per_row, first_page_column);
 
-  unsigned int document_height = 0, document_width = 0;
-  zathura_document_compute_size(zathura->document, &document_height, &document_width);
-  zathura_document_set_document_size(zathura->document, document_height, document_width);
+  zathura_document_update_size(zathura_get_document(zathura));
 }
 
 void cb_index_row_activated(GtkTreeView* tree_view, GtkTreePath* path, GtkTreeViewColumn* UNUSED(column), void* data) {
@@ -499,22 +498,6 @@ error_free:
   g_free(dialog);
 
 error_ret:
-  return false;
-}
-
-gboolean cb_view_resized(GtkWidget* UNUSED(widget), GtkAllocation* UNUSED(allocation), zathura_t* zathura) {
-  if (zathura_has_document(zathura) == false) {
-    return false;
-  }
-
-  /* adjust the scale according to settings. If nothing needs to be resized,
-     it does not trigger the resize event.
-
-     The right viewport size is already in the document object, due to a
-     previous call to adjustment_changed. We don't want to use the allocation in
-     here, because we would have to subtract scrollbars, etc. */
-  adjust_view(zathura);
-
   return false;
 }
 

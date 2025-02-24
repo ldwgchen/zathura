@@ -249,14 +249,16 @@ zathura_error_t zathura_document_free(zathura_document_t* document) {
   return error;
 }
 
-void zathura_document_compute_size(zathura_document_t* document, unsigned int* height, unsigned int* width) {
-  g_return_if_fail(document != NULL && height != NULL && width != NULL);
+void zathura_document_compute_size(zathura_document_t* document, unsigned int* document_height,
+                                   unsigned int* document_width) {
+  g_return_if_fail(document != NULL && document_height != NULL && document_width != NULL);
   const unsigned int npag = zathura_document_get_number_of_pages(document);
   const unsigned int ncol = zathura_document_get_pages_per_row(document);
   g_return_if_fail(npag != 0 && ncol != 0);
-  const unsigned int c0 = zathura_document_get_first_page_column(document);
+  const unsigned int c0  = zathura_document_get_first_page_column(document);
+  const unsigned int pad = zathura_document_get_page_padding(document);
 
-  unsigned int document_width = 0, document_height = 0;
+  unsigned int accumulated_width = 0, accumulated_height = 0;
 
   /* calc document height */
   const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
@@ -265,13 +267,17 @@ void zathura_document_compute_size(zathura_document_t* document, unsigned int* h
     get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
     unsigned int row_height = 0;
     for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page = zathura_document_get_page(document, page_id);
-      const double height  = zathura_page_get_height(page);
-      if (row_height < height) {
-        row_height = height;
+      zathura_page_t* page     = zathura_document_get_page(document, page_id);
+      unsigned int page_height = 0;
+      unsigned int page_width  = 0;
+      const double height      = zathura_page_get_height(page);
+      const double width       = zathura_page_get_width(page);
+      page_calc_height_width(document, height, width, &page_height, &page_width, true);
+      if (row_height < page_height) {
+        row_height = page_height;
       }
     }
-    document_height += row_height;
+    accumulated_height += row_height;
   }
 
   /* calc document width */
@@ -280,41 +286,32 @@ void zathura_document_compute_size(zathura_document_t* document, unsigned int* h
     get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
     unsigned int col_width = 0;
     for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page = zathura_document_get_page(document, page_id);
-      const double width   = zathura_page_get_width(page);
-      if (col_width < width) {
-        col_width = width;
+      zathura_page_t* page     = zathura_document_get_page(document, page_id);
+      unsigned int page_height = 0;
+      unsigned int page_width  = 0;
+      const double height      = zathura_page_get_height(page);
+      const double width       = zathura_page_get_width(page);
+      page_calc_height_width(document, height, width, &page_height, &page_width, true);
+      if (col_width < page_width) {
+        col_width = page_width;
       }
     }
-    document_width += col_width;
+    accumulated_width += col_width;
   }
 
-  *height = document_height;
-  *width  = document_width;
+  accumulated_height += (nrow - 1) * pad;
+  accumulated_width += (ncol - 1) * pad;
+  *document_height = accumulated_height;
+  *document_width  = accumulated_width;
 }
 
-void zathura_document_compute_padding(zathura_document_t* document, unsigned int* pad_y, unsigned int* pad_x) {
-  g_return_if_fail(document != NULL && pad_y != NULL && pad_x != NULL);
-  const unsigned int npag = zathura_document_get_number_of_pages(document);
-  const unsigned int ncol = zathura_document_get_pages_per_row(document);
-  g_return_if_fail(npag != 0 && ncol != 0);
-  const unsigned int c0   = zathura_document_get_first_page_column(document);
-  const unsigned int pad  = zathura_document_get_page_padding(document);
-  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
-  *pad_y                  = (nrow - 1) * pad;
-  *pad_x                  = (ncol - 1) * pad;
-}
-
-void zathura_document_get_transformed_document_size(zathura_document_t* document, unsigned int* height,
-                                                    unsigned int* width) {
+void zathura_document_update_size(zathura_document_t* document) {
+  if (document == NULL) {
+    return;
+  }
   unsigned int document_height = 0, document_width = 0;
-  zathura_document_get_document_size(document, &document_height, &document_width);
-  g_return_if_fail(document_height != 0 && document_width != 0);
-  page_calc_height_width(document, document_height, document_width, height, width, true);
-  unsigned int pad_y = 0, pad_x = 0;
-  zathura_document_compute_padding(document, &pad_y, &pad_x);
-  *height += pad_y;
-  *width += pad_x;
+  zathura_document_compute_size(document, &document_height, &document_width);
+  zathura_document_set_document_size(document, document_height, document_width);
 }
 
 const char* zathura_document_get_path(zathura_document_t* document) {

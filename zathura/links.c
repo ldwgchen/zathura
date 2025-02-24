@@ -121,6 +121,7 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
     zathura_document_set_zoom(document, zathura_correct_zoom_value(zathura->ui.session, link->target.zoom));
     adjust_view(zathura);
     render_all(zathura);
+    zathura_document_update_size(document);
   }
 
   /* get page */
@@ -140,7 +141,7 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
   /* NOTE: link->target is in page units, needs to be scaled and rotated */
   unsigned int document_height = 0;
   unsigned int document_width  = 0;
-  zathura_document_get_transformed_document_size(document, &document_height, &document_width);
+  zathura_document_get_document_size(document, &document_height, &document_width);
 
   unsigned int page_height = 0;
   unsigned int page_width  = 0;

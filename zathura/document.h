@@ -22,29 +22,20 @@
 zathura_document_t* zathura_document_open(zathura_t* zathura, const char* path, const char* uri, const char* password,
                                           zathura_error_t* error);
 /**
- * Compute the size of the entire document in pixels (without scaling and rotation).
+ * Compute the size of the entire document in pixels (with scaling and rotation).
  *
  * @param[in]  document               The document
  * @param[out] height,width           The height and width of the document
  */
-void zathura_document_compute_size(zathura_document_t* document, unsigned int* height, unsigned int* width);
+void zathura_document_compute_size(zathura_document_t* document, unsigned int* document_height,
+                                   unsigned int* document_width);
 
 /**
- * Compute total height and width padding for the entire document.
+ * Recompute and set document size.
  *
  * @param[in]  document               The document
- * @param[out] pad_y,pad_x            Total padding for document height and width
  */
-void zathura_document_compute_padding(zathura_document_t* document, unsigned int* pad_y, unsigned int* pad_x);
-
-/**
- * Get scaled, rotated, and padded document height and width.
- *
- * @param[in]  document                         The document
- * @param[out] document_height,document_width   Transformed height and width of the document
- */
-void zathura_document_get_transformed_document_size(zathura_document_t* document, unsigned int* document_height,
-                                                    unsigned int* document_width);
+void zathura_document_update_size(zathura_document_t* document);
 
 /**
  * Free the document

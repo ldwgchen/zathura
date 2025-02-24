@@ -286,7 +286,7 @@ void synctex_highlight_rects(zathura_t* zathura, unsigned int page, girara_list_
   /* NOTE: rectangle is in viewport units, already scaled and rotated */
   unsigned int document_height = 0;
   unsigned int document_width  = 0;
-  zathura_document_get_transformed_document_size(document, &document_height, &document_width);
+  zathura_document_get_document_size(document, &document_height, &document_width);
 
   /* Need to adjust rectangle to page scale and orientation */
   zathura_page_t* doc_page  = zathura_document_get_page(document, page);

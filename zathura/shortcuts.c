@@ -523,6 +523,7 @@ bool sc_rotate(girara_session_t* session, girara_argument_t* argument, girara_ev
 
   /* render all pages again */
   render_all(zathura);
+  zathura_document_update_size(zathura->document);
 
   page_set(zathura, page_number);
 
@@ -579,7 +580,7 @@ bool sc_scroll(girara_session_t* session, girara_argument_t* argument, girara_ev
 
   unsigned int document_height = 0;
   unsigned int document_width  = 0;
-  zathura_document_get_transformed_document_size(zathura->document, &document_height, &document_width);
+  zathura_document_get_document_size(zathura->document, &document_height, &document_width);
 
   float scroll_step = 40;
   girara_setting_get(session, "scroll-step", &scroll_step);
@@ -964,7 +965,7 @@ bool sc_search(girara_session_t* session, girara_argument_t* argument, girara_ev
 
     unsigned int document_height = 0;
     unsigned int document_width  = 0;
-    zathura_document_get_transformed_document_size(zathura->document, &document_height, &document_width);
+    zathura_document_get_document_size(zathura->document, &document_height, &document_width);
 
     /* compute the center of the rectangle, which will be aligned to the center
        of the viewport */
@@ -1356,6 +1357,7 @@ bool sc_toggle_presentation(girara_session_t* session, girara_argument_t* UNUSED
     zathura_document_set_zoom(zathura->document, zathura->shortcut.toggle_presentation_mode.zoom);
     render_all(zathura);
     refresh_view(zathura);
+    zathura_document_update_size(zathura->document);
 
     /* set mode */
     girara_mode_set(session, zathura->modes.normal);
@@ -1468,6 +1470,7 @@ bool sc_zoom(girara_session_t* session, girara_argument_t* argument, girara_even
   girara_debug("Re-rendering with new zoom level %0.2f.", new_zoom);
   render_all(zathura);
   refresh_view(zathura);
+  zathura_document_update_size(zathura->document);
 
   return false;
 }

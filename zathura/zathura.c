@@ -205,6 +205,7 @@ void zathura_update_view_ppi(zathura_t* zathura) {
     adjust_view(zathura);
     render_all(zathura);
     refresh_view(zathura);
+    zathura_document_update_size(document);
   }
 }
 
@@ -254,8 +255,6 @@ static bool init_ui(zathura_t* zathura) {
     girara_error("Failed to create page widget.");
     return false;
   }
-
-  g_signal_connect(G_OBJECT(zathura->ui.session->gtk.window), "configure-event", G_CALLBACK(cb_view_resized), zathura);
 
   GtkAdjustment* hadjustment = gtk_scrolled_window_get_hadjustment(GTK_SCROLLED_WINDOW(zathura->ui.session->gtk.view));
 
@@ -1145,9 +1144,7 @@ bool document_open(zathura_t* zathura, const char* path, const char* uri, const 
   page_widget_set_mode(zathura, page_padding, pages_per_row, first_page_column, page_right_to_left);
   zathura_document_set_page_layout(document, page_padding, pages_per_row, first_page_column);
 
-  unsigned int document_height = 0, document_width = 0;
-  zathura_document_compute_size(document, &document_height, &document_width);
-  zathura_document_set_document_size(document, document_height, document_width);
+  zathura_document_update_size(document);
 
   girara_set_view(zathura->ui.session, zathura->ui.page_widget);
 
@@ -1713,7 +1710,7 @@ bool adjust_view(zathura_t* zathura) {
   unsigned int document_height = 0, document_width = 0;
   unsigned int view_height = 0, view_width = 0;
 
-  zathura_document_get_transformed_document_size(document, &document_height, &document_width);
+  zathura_document_get_document_size(document, &document_height, &document_width);
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
   if (view_height == 0 || view_width == 0 || page_height == 0 || page_width == 0 || document_width == 0) {
@@ -1741,6 +1738,7 @@ bool adjust_view(zathura_t* zathura) {
   zathura_document_set_zoom(document, newzoom);
   render_all(zathura);
   refresh_view(zathura);
+  zathura_document_update_size(document);
 
 error_ret:
   return false;
