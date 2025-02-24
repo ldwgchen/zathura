@@ -21,21 +21,24 @@
  */
 zathura_document_t* zathura_document_open(zathura_t* zathura, const char* path, const char* uri, const char* password,
                                           zathura_error_t* error);
-/**
- * Compute the size of the entire document in pixels (with scaling and rotation).
- *
- * @param[in]  document               The document
- * @param[out] height,width           The height and width of the document
- */
-void zathura_document_compute_size(zathura_document_t* document, unsigned int* document_height,
-                                   unsigned int* document_width);
 
 /**
- * Recompute and set document size.
+ * Get the tail position of a page
  *
- * @param[in]  document               The document
+ * @param[in]  document                The document
+ * @param[in]  page_number
+ * @param[out] position_x,position_y   Tail positions
  */
-void zathura_document_update_size(zathura_document_t* document);
+void zathura_document_get_page_tail_position(zathura_document_t* document, unsigned int page_number,
+                                             unsigned int* position_x, unsigned int* position_y);
+
+/** Get the list of page tail positions
+ *
+ * @param[in] document                 The document
+ * @return    page_positions           List of page tail positions
+ *
+ */
+girara_list_t* zathura_document_get_page_tail_positions(zathura_document_t* document);
 
 /**
  * Free the document

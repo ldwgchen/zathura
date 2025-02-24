@@ -207,7 +207,7 @@ static void mark_evaluate(zathura_t* zathura, int key) {
       zathura_document_set_zoom(zathura_get_document(zathura),
                                 zathura_correct_zoom_value(zathura->ui.session, mark->zoom));
       render_all(zathura);
-      zathura_document_update_size(zathura->document);
+      update_size(zathura);
 
       zathura_jumplist_add(zathura);
       page_set(zathura, mark->page);

@@ -205,7 +205,7 @@ void zathura_update_view_ppi(zathura_t* zathura) {
     adjust_view(zathura);
     render_all(zathura);
     refresh_view(zathura);
-    zathura_document_update_size(document);
+    update_size(zathura);
   }
 }
 
@@ -1144,7 +1144,7 @@ bool document_open(zathura_t* zathura, const char* path, const char* uri, const 
   page_widget_set_mode(zathura, page_padding, pages_per_row, first_page_column, page_right_to_left);
   zathura_document_set_page_layout(document, page_padding, pages_per_row, first_page_column);
 
-  zathura_document_update_size(document);
+  update_size(zathura);
 
   girara_set_view(zathura->ui.session, zathura->ui.page_widget);
 
@@ -1738,10 +1738,81 @@ bool adjust_view(zathura_t* zathura) {
   zathura_document_set_zoom(document, newzoom);
   render_all(zathura);
   refresh_view(zathura);
-  zathura_document_update_size(document);
+  update_size(zathura);
 
 error_ret:
   return false;
+}
+
+void update_size(zathura_t* zathura) {
+  zathura_document_t* document = zathura_get_document(zathura);
+  if (zathura->document == NULL) {
+    return;
+  }
+  const unsigned int npag = zathura_document_get_number_of_pages(document);
+  const unsigned int ncol = zathura_document_get_pages_per_row(document);
+  if (npag == 0 || ncol == 0) {
+    return;
+  }
+  const unsigned int c0              = zathura_document_get_first_page_column(document);
+  const unsigned int pad             = zathura_document_get_page_padding(document);
+  girara_list_t* page_tail_positions = zathura_document_get_page_tail_positions(document);
+  if (page_tail_positions == NULL) {
+    return;
+  }
+
+  unsigned int accumulated_height = 0, accumulated_width = 0;
+
+  /* calc document height */
+  const unsigned int nrow = ceil((double)(npag + c0 - 1) / ncol);
+  for (unsigned int row = 1; row <= nrow; row++) {
+    unsigned int first_page_id, last_page_id;
+    get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
+    unsigned int row_height = 0;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_t* page     = zathura_document_get_page(document, page_id);
+      unsigned int page_height = 0;
+      unsigned int page_width  = 0;
+      const double height      = zathura_page_get_height(page);
+      const double width       = zathura_page_get_width(page);
+      page_calc_height_width(document, height, width, &page_height, &page_width, true);
+      if (row_height < page_height) {
+        row_height = page_height;
+      }
+    }
+    accumulated_height += row_height + pad;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_tail_position_t* page_tail_position = girara_list_nth(page_tail_positions, page_id);
+      page_tail_position->position_y                   = accumulated_height;
+    }
+  }
+
+  /* calc document width */
+  for (unsigned int col = 1; col <= ncol; col++) {
+    unsigned int first_page_id, last_page_id;
+    get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
+    unsigned int col_width = 0;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_t* page     = zathura_document_get_page(document, page_id);
+      unsigned int page_height = 0;
+      unsigned int page_width  = 0;
+      const double height      = zathura_page_get_height(page);
+      const double width       = zathura_page_get_width(page);
+      page_calc_height_width(document, height, width, &page_height, &page_width, true);
+      if (col_width < page_width) {
+        col_width = page_width;
+      }
+    }
+    accumulated_width += col_width + pad;
+    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
+      zathura_page_tail_position_t* page_tail_position = girara_list_nth(page_tail_positions, page_id);
+      page_tail_position->position_x                   = accumulated_width;
+    }
+  }
+
+  accumulated_height -= pad;
+  accumulated_width -= pad;
+  zathura_document_set_document_size(document, accumulated_height, accumulated_width);
 }
 
 #ifdef G_OS_UNIX

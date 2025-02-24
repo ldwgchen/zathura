@@ -55,11 +55,8 @@ unsigned int position_to_page_number(zathura_document_t* document, double pos_x,
   const unsigned int npag = zathura_document_get_number_of_pages(document);
   const unsigned int ncol = zathura_document_get_pages_per_row(document);
   g_return_val_if_fail(npag != 0 && ncol != 0, 0);
-  const unsigned int c0  = zathura_document_get_first_page_column(document);
-  const unsigned int pad = zathura_document_get_page_padding(document);
+  const unsigned int c0 = zathura_document_get_first_page_column(document);
 
-  /* pos_x == 0 <-> leftmost, pos_y == 0 <-> topmost */
-  double x = 0.0, y = 0.0;
   unsigned int page_row = 0, page_col = 0;
 
   /* find row */
@@ -67,20 +64,9 @@ unsigned int position_to_page_number(zathura_document_t* document, double pos_x,
   for (unsigned int row = 1; row <= nrow; row++) {
     unsigned int first_page_id, last_page_id;
     get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
-    double row_height = 0.0;
-    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page     = zathura_document_get_page(document, page_id);
-      unsigned int page_height = 0;
-      unsigned int page_width  = 0;
-      const double height      = zathura_page_get_height(page);
-      const double width       = zathura_page_get_width(page);
-      page_calc_height_width(document, height, width, &page_height, &page_width, true);
-      if (row_height < page_height) {
-        row_height = page_height;
-      }
-    }
-    y += (row_height + pad);
-    if (y / document_height >= pos_y) {
+    unsigned int y = 0, dontcare = 0;
+    zathura_document_get_page_tail_position(document, first_page_id, &dontcare, &y);
+    if ((double)y / document_height >= pos_y) {
       page_row = row;
       break;
     }
@@ -93,20 +79,9 @@ unsigned int position_to_page_number(zathura_document_t* document, double pos_x,
   for (unsigned int col = 1; col <= ncol; col++) {
     unsigned int first_page_id, last_page_id;
     get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
-    double col_width = 0.0;
-    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page     = zathura_document_get_page(document, page_id);
-      unsigned int page_height = 0;
-      unsigned int page_width  = 0;
-      const double height      = zathura_page_get_height(page);
-      const double width       = zathura_page_get_width(page);
-      page_calc_height_width(document, height, width, &page_height, &page_width, true);
-      if (col_width < page_width) {
-        col_width = page_width;
-      }
-    }
-    x += (col_width + pad);
-    if (x / document_width >= pos_x) {
+    unsigned int x = 0, dontcare = 0;
+    zathura_document_get_page_tail_position(document, first_page_id, &x, &dontcare);
+    if ((double)x / document_width >= pos_x) {
       page_col = col;
       break;
     }
@@ -142,53 +117,10 @@ void page_number_to_position(zathura_document_t* document, unsigned int page_num
   unsigned int view_height = 0, view_width = 0;
   zathura_document_get_viewport_size(document, &view_height, &view_width);
 
-  const unsigned int npag = zathura_document_get_number_of_pages(document);
-  const unsigned int ncol = zathura_document_get_pages_per_row(document);
-  g_return_if_fail(npag != 0 && ncol != 0);
-  const unsigned int c0  = zathura_document_get_first_page_column(document);
-  const unsigned int pad = zathura_document_get_page_padding(document);
+  unsigned int x = 0, y = 0;
 
-  const unsigned int page_row = ceil((double)(page_number + c0) / ncol);
-  const unsigned int page_col = ncol > 1 ? (page_number + c0) % ncol : 1;
-
-  double x = 0, y = 0;
-
-  /* calc base y */
-  for (unsigned int row = 1; row < page_row; row++) {
-    unsigned int first_page_id, last_page_id;
-    get_row_range(row, c0, ncol, npag, &first_page_id, &last_page_id);
-    unsigned int row_height = 0;
-    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page     = zathura_document_get_page(document, page_id);
-      unsigned int page_height = 0;
-      unsigned int page_width  = 0;
-      const double height      = zathura_page_get_height(page);
-      const double width       = zathura_page_get_width(page);
-      page_calc_height_width(document, height, width, &page_height, &page_width, true);
-      if (row_height < page_height) {
-        row_height = page_height;
-      }
-    }
-    y += (row_height + pad);
-  }
-
-  /* calc base x */
-  for (unsigned int col = 1; col < page_col; col++) {
-    unsigned int first_page_id, last_page_id;
-    get_column_range(col, c0, ncol, npag, &first_page_id, &last_page_id);
-    unsigned int column_width = 0;
-    for (unsigned int page_id = first_page_id; page_id <= last_page_id; page_id++) {
-      zathura_page_t* page     = zathura_document_get_page(document, page_id);
-      unsigned int page_height = 0;
-      unsigned int page_width  = 0;
-      const double height      = zathura_page_get_height(page);
-      const double width       = zathura_page_get_width(page);
-      page_calc_height_width(document, height, width, &page_height, &page_width, true);
-      if (column_width < page_width) {
-        column_width = page_width;
-      }
-    }
-    x += (column_width + pad);
+  if (page_number > 0) {
+    zathura_document_get_page_tail_position(document, page_number - 1, &x, &y);
   }
 
   /* compute the shift to align to the viewport. If the page fits to viewport, just center it. */
@@ -197,8 +129,8 @@ void page_number_to_position(zathura_document_t* document, unsigned int page_num
        (page_height > view_height ? (0.5 + (yalign - 0.5) * (page_height - view_height) / page_height) : 0.5);
   x += page_width * (page_width > view_width ? 0.5 + (xalign - 0.5) * (page_width - view_width) / page_width : 0.5);
 
-  *pos_y = y / document_height;
-  *pos_x = x / document_width;
+  *pos_y = (double)y / document_height;
+  *pos_x = (double)x / document_width;
 }
 
 bool page_is_visible(zathura_document_t* document, unsigned int page_number) {

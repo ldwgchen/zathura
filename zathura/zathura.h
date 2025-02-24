@@ -450,6 +450,14 @@ void refresh_view(zathura_t* zathura);
 bool adjust_view(zathura_t* zathura);
 
 /**
+ * Recalculate and update the size of the entire document in pixels (with scaling and rotation) while setting the list
+ * of page tail positions
+ *
+ * @param[in]  document               The document
+ */
+void update_size(zathura_t* zathura);
+
+/**
  * Builds the box structure to show the rendered pages
  *
  * @param zathura The zathura session

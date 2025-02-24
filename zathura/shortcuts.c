@@ -523,7 +523,7 @@ bool sc_rotate(girara_session_t* session, girara_argument_t* argument, girara_ev
 
   /* render all pages again */
   render_all(zathura);
-  zathura_document_update_size(zathura->document);
+  update_size(zathura);
 
   page_set(zathura, page_number);
 
@@ -1357,7 +1357,7 @@ bool sc_toggle_presentation(girara_session_t* session, girara_argument_t* UNUSED
     zathura_document_set_zoom(zathura->document, zathura->shortcut.toggle_presentation_mode.zoom);
     render_all(zathura);
     refresh_view(zathura);
-    zathura_document_update_size(zathura->document);
+    update_size(zathura);
 
     /* set mode */
     girara_mode_set(session, zathura->modes.normal);
@@ -1470,7 +1470,7 @@ bool sc_zoom(girara_session_t* session, girara_argument_t* argument, girara_even
   girara_debug("Re-rendering with new zoom level %0.2f.", new_zoom);
   render_all(zathura);
   refresh_view(zathura);
-  zathura_document_update_size(zathura->document);
+  update_size(zathura);
 
   return false;
 }

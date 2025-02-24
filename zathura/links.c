@@ -121,7 +121,7 @@ static void link_goto_dest(zathura_t* zathura, const zathura_link_t* link) {
     zathura_document_set_zoom(document, zathura_correct_zoom_value(zathura->ui.session, link->target.zoom));
     adjust_view(zathura);
     render_all(zathura);
-    zathura_document_update_size(document);
+    update_size(zathura);
   }
 
   /* get page */
