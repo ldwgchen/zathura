@@ -1735,6 +1735,9 @@ bool adjust_view(zathura_t* zathura) {
     goto error_ret;
   }
 
+  if ((fabs(newzoom - zoom) <= DBL_EPSILON)) {
+    goto error_ret;
+  }
   zathura_document_set_zoom(document, newzoom);
   render_all(zathura);
   refresh_view(zathura);
