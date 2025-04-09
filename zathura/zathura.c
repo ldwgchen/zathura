@@ -1735,13 +1735,19 @@ bool adjust_view(zathura_t* zathura) {
     goto error_ret;
   }
 
-  if ((fabs(newzoom - zoom) <= DBL_EPSILON)) {
-    goto error_ret;
-  }
   zathura_document_set_zoom(document, newzoom);
-  render_all(zathura);
-  refresh_view(zathura);
-  update_size(zathura);
+  unsigned int new_page_height = 0, new_page_width = 0;
+  page_calc_height_width(document, height, width, &new_page_height, &new_page_width, true);
+
+  static const int min_change = 2;
+  if (abs((int)new_page_width - (int)page_width) > min_change ||
+      abs((int)new_page_height - (int)page_height) > min_change) {
+    render_all(zathura);
+    refresh_view(zathura);
+    update_size(zathura);
+  } else {
+    zathura_document_set_zoom(document, zoom);
+  }
 
 error_ret:
   return false;
